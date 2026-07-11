@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BCH Tip Button</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <img src="icons/icon48.png" alt="">
+      <div>
+        <h1>BCH Tip Button</h1>
+        <p data-i18n="settings">Settings</p>
+      </div>
+    </header>
+
+    <label>
+      <span data-i18n="language">Language</span>
+      <select id="language">
+        <option value="en">EN</option>
+        <option value="es">ES</option>
+      </select>
+    </label>
+
+    <label>
+      <span data-i18n="botHandle">Bot account</span>
+      <div class="handle"><span>@</span><input id="botHandle" autocomplete="off" spellcheck="false" maxlength="15"></div>
+    </label>
+
+    <label>
+      <span data-i18n="presets">Quick amounts, separated by commas</span>
+      <input id="presets" autocomplete="off" spellcheck="false">
+    </label>
+
+    <label>
+      <span data-i18n="template">Command template</span>
+      <input id="commandTemplate" autocomplete="off" spellcheck="false">
+      <small data-i18n="variables">Variables: {bot}, {user}, {amount}</small>
+    </label>
+
+    <button id="save" type="button" data-i18n="save">Save</button>
+    <div id="status" role="status"></div>
+
+    <p class="note" data-i18n="note">The extension never accesses keys or funds. It posts the tip command from your current X tab.</p>
+  </main>
+  <script src="core.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
