@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "BCH Tip Button for X",
-  "description": "Adds a button to send BCH tips with @bchtip from posts on X.",
-  "version": "0.4.0",
+  "description": "Adds a button to prepare BCH tip replies with @bchtip from posts on X.",
+  "version": "0.5.0",
   "minimum_chrome_version": "102",
   "permissions": ["storage", "scripting"],
   "host_permissions": [

@@ -15,15 +15,14 @@ async function insertReplyInMainWorld(text, targetToken) {
     .replace(/\s+/g, " ")
     .trim();
   const selector = '[data-testid^="tweetTextarea_"][contenteditable="true"]';
+  const editorText = (candidate) => candidate?.innerText || candidate?.textContent || "";
   const editor = [...document.querySelectorAll(selector)].find((candidate) =>
     isVisible(candidate) && candidate.getAttribute("data-bch-tip-target") === targetToken
   ) || null;
 
   if (!editor) return { ok: false, reason: "editor-not-found", actual: "" };
 
-  const before = [...editor.querySelectorAll('[data-text="true"]')]
-    .map((node) => node.textContent || "")
-    .join("") || editor.textContent || "";
+  const before = editorText(editor);
   if (normalize(before)) return { ok: false, reason: "editor-not-empty", actual: before };
 
   editor.focus();
@@ -41,9 +40,7 @@ async function insertReplyInMainWorld(text, targetToken) {
   let actual = "";
   for (let attempt = 0; attempt < 15; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 100));
-    actual = [...editor.querySelectorAll('[data-text="true"]')]
-      .map((node) => node.textContent || "")
-      .join("") || editor.textContent || "";
+    actual = editorText(editor);
     if (normalize(actual) === normalize(text)) break;
   }
 

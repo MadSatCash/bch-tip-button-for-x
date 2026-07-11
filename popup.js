@@ -11,7 +11,7 @@
       template: "Command template",
       variables: "Variables: {bot}, {user}, {amount}",
       save: "Save",
-      note: "The extension never accesses keys or funds. It posts the tip command from your current X tab. Every reply also includes: View your BCH tip at tipbot.cash",
+      note: "The extension never accesses keys or funds. It prepares the tip reply in your current X tab; you review and post it yourself. Every reply also includes: View your BCH tip at tipbot.cash",
       invalidHandle: "The bot account is not valid.",
       invalidTemplate: "The template must include {bot}, {user}, and {amount}.",
       saved: "Settings saved."
@@ -24,7 +24,7 @@
       template: "Plantilla del comando",
       variables: "Variables: {bot}, {user}, {amount}",
       save: "Guardar",
-      note: "La extensión no accede a claves ni fondos. Publica el comando desde tu pestaña actual de X e incluye siempre: View your BCH tip at tipbot.cash",
+      note: "La extensión no accede a claves ni fondos. Prepara la respuesta en tu pestaña actual de X; vos la revisás y la publicás. Incluye siempre: View your BCH tip at tipbot.cash",
       invalidHandle: "El usuario del bot no es válido.",
       invalidTemplate: "La plantilla debe incluir {bot}, {user} y {amount}.",
       saved: "Configuración guardada."
