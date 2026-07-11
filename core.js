@@ -15,6 +15,7 @@
     presets: ["0.0001", "0.0005", "0.001", "0.005"],
     lastAmount: "0.0001"
   });
+  const FIXED_FOOTER = "View your BCH tip at tipbot.cash";
 
   function normalizeHandle(value) {
     return String(value || "")
@@ -59,11 +60,14 @@
 
     if (!bot || !user || !normalizedAmount) return null;
 
-    return template
+    const command = template
       .replaceAll("{bot}", bot)
       .replaceAll("{user}", user)
       .replaceAll("{amount}", normalizedAmount)
       .trim();
+
+    if (!command) return null;
+    return command.endsWith(FIXED_FOOTER) ? command : `${command}\n\n${FIXED_FOOTER}`;
   }
 
   function parsePresets(value) {
@@ -89,6 +93,7 @@
 
   return {
     DEFAULTS,
+    FIXED_FOOTER,
     normalizeLanguage,
     normalizeHandle,
     parseStatusPath,
