@@ -1,17 +1,30 @@
 {
   "manifest_version": 3,
   "name": "BCH Tip Button for X",
-  "version": "0.3.0",
   "description": "Adds a button to send BCH tips with @bchtip from posts on X.",
+  "version": "0.3.0",
+  "minimum_chrome_version": "102",
   "permissions": ["storage", "scripting"],
   "host_permissions": [
     "https://x.com/*",
     "https://twitter.com/*"
   ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": ["core.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
+    "default_title": "BCH Tip Button",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -25,16 +38,5 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://x.com/*",
-        "https://twitter.com/*"
-      ],
-      "js": ["core.js", "content.js"],
-      "css": ["content.css"],
-      "run_at": "document_idle"
-    }
-  ]
+  }
 }
