@@ -1,4 +1,4 @@
-# BCH Tip Button for X
+# BCH Tip Button for X — 0.4.0
 
 A lightweight Chrome extension that adds a **Tip** button to posts on X and helps you send Bitcoin Cash tips through **@bchtip** without manually typing the command.
 
@@ -61,7 +61,11 @@ The extension posts a reply in this format:
 
 ```text
 @bchtip tip @username 0.0001 BCH
+
+View your BCH tip at tipbot.cash
 ```
+
+Every reply also includes the fixed English line `View your BCH tip at tipbot.cash` so recipients know where to view their tip.
 
 The tip is then handled by **@bchtip** and your TipBot account.
 
