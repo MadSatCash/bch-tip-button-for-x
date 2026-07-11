@@ -8,10 +8,8 @@
     tweet: 'article[data-testid="tweet"]',
     reply: '[data-testid="reply"]',
     actionGroup: 'div[role="group"]',
-    composer: '[data-testid^="tweetTextarea_"][contenteditable="true"]',
-    submit: '[data-testid="tweetButton"], [data-testid="tweetButtonInline"]'
+    composer: '[data-testid^="tweetTextarea_"][contenteditable="true"]'
   };
-  const VERIFY_KEY = "bch-tip-pending-verification";
 
   const COPY = {
     en: {
@@ -26,26 +24,20 @@
       preview: "Reply that will be posted",
       invalidAmount: "Invalid amount",
       lowAmount: "The bot may reject amounts below 0.0001 BCH.",
-      notice: "The reply will be posted automatically in this tab.",
+      notice: "The reply will be prepared in this tab. Review it and click Reply when you're ready.",
       cancel: "Cancel",
-      confirm: "Send tip",
+      confirm: "Prepare reply",
       language: "Language",
       opening: "Opening the reply…",
       writing: "Writing the reply…",
-      posting: "Posting the tip…",
-      posted: "Tip posted.",
-      refreshing: "Tip posted. Updating the conversation…",
+      preparing: "Preparing the reply…",
+      ready: "Reply ready — review it and click Reply when you're ready.",
       missingReply: "I couldn't find X's Reply button for this post.",
       missingComposer: "X didn't open the reply composer.",
-      writeRejected: "X didn't accept the automatic text entry.",
-      textNotReady: "The reply text could not be verified.",
+      writeRejected: "X did not confirm the inserted text.",
+      textNotReady: "X did not confirm the complete reply text.",
       composerNotEmpty: "The reply editor was not empty. Nothing was posted.",
-      submitDisabled: "X didn't enable the Reply button.",
-      submitNotConfirmed: "X didn't confirm that the reply was sent.",
-      manualReview: "Automatic posting stopped. Review the open reply in X.",
-      uncertain: "X did not confirm a new reply. Check the conversation before allowing another tip.",
-      allowRetry: "I've checked — allow retry",
-      checking: "Checking the conversation…",
+      manualReview: "Review the open reply in X before posting.",
       genericError: "The tip could not be posted."
     },
     es: {
@@ -60,26 +52,20 @@
       preview: "Respuesta que se publicará",
       invalidAmount: "Monto inválido",
       lowAmount: "El bot podría rechazar montos menores a 0.0001 BCH.",
-      notice: "La respuesta se publicará automáticamente en esta pestaña.",
+      notice: "La respuesta se preparará en esta pestaña. Revisala y presioná Responder cuando estés conforme.",
       cancel: "Cancelar",
-      confirm: "Enviar propina",
+      confirm: "Preparar respuesta",
       language: "Idioma",
       opening: "Abriendo la respuesta…",
       writing: "Escribiendo la respuesta…",
-      posting: "Publicando la propina…",
-      posted: "Propina publicada.",
-      refreshing: "Propina publicada. Actualizando la conversación…",
+      preparing: "Preparando la respuesta…",
+      ready: "Respuesta lista: revisala y presioná Responder cuando estés conforme.",
       missingReply: "No pude encontrar el botón Responder de este post.",
       missingComposer: "X no abrió el cuadro de respuesta.",
-      writeRejected: "X no aceptó la escritura automática.",
-      textNotReady: "No se pudo verificar el texto de la respuesta.",
+      writeRejected: "X no confirmó el texto insertado.",
+      textNotReady: "X no confirmó el texto completo de la respuesta.",
       composerNotEmpty: "El cuadro de respuesta no estaba vacío. No se publicó nada.",
-      submitDisabled: "X no habilitó el botón Responder.",
-      submitNotConfirmed: "X no confirmó que la respuesta se haya enviado.",
-      manualReview: "La publicación automática se detuvo. Revisá la respuesta abierta en X.",
-      uncertain: "X no confirmó una respuesta nueva. Revisá la conversación antes de permitir otra propina.",
-      allowRetry: "Ya revisé — permitir reintento",
-      checking: "Verificando la conversación…",
+      manualReview: "Revisá la respuesta abierta en X antes de publicarla.",
       genericError: "No se pudo publicar la propina."
     }
   };
@@ -191,58 +177,7 @@
   }
 
   function composerText(composer) {
-    const draftText = [...composer.querySelectorAll('[data-text="true"]')]
-      .map((node) => node.textContent || "")
-      .join("");
-    return draftText || composer.textContent || "";
-  }
-
-  function findSubmitForComposer(composer) {
-    let container = composer?.parentElement || null;
-    while (container && container !== document.body && container !== document.documentElement) {
-      const buttons = [...container.querySelectorAll(SELECTORS.submit)].filter(visible);
-      if (buttons.length === 1) return buttons[0];
-      if (buttons.length > 1) return null;
-      container = container.parentElement;
-    }
-    return null;
-  }
-
-  function currentUsername() {
-    const profileLink = document.querySelector('a[data-testid="AppTabBar_Profile_Link"]');
-    const path = profileLink?.getAttribute("href") || "";
-    return path.match(/^\/([A-Za-z0-9_]{1,15})\/?$/)?.[1] || "";
-  }
-
-  function matchingReplyIds(command, author = "") {
-    const expected = normalizeText(command);
-    const expectedAuthor = author.toLowerCase();
-    const ids = new Set();
-    document.querySelectorAll(SELECTORS.tweet).forEach((article) => {
-      const body = article.querySelector('[data-testid="tweetText"]');
-      const identity = findTweetIdentity(article);
-      if (!body || !identity || normalizeText(body.textContent) !== expected) return;
-      if (expectedAuthor && identity.username.toLowerCase() !== expectedAuthor) return;
-      ids.add(identity.statusId);
-    });
-    return ids;
-  }
-
-  function statusTimestampMs(statusId) {
-    try {
-      return Number((BigInt(statusId) >> 22n) + 1288834974657n);
-    } catch {
-      return 0;
-    }
-  }
-
-  function findNewPublishedReply(command, previousIds, author = "", startedAt = 0) {
-    const matches = matchingReplyIds(command, author);
-    const earliest = Number(startedAt || 0) - 5000;
-    const newId = [...matches].find((statusId) =>
-      !previousIds.has(statusId) && (!earliest || statusTimestampMs(statusId) >= earliest)
-    );
-    return newId ? findArticleByStatusId(newId) : null;
+    return composer?.innerText || composer?.textContent || "";
   }
 
   function createTargetToken() {
@@ -394,84 +329,6 @@
     }
   }
 
-  function savePendingVerification(payload) {
-    try {
-      sessionStorage.setItem(VERIFY_KEY, JSON.stringify(payload));
-    } catch {
-      // Verification can still complete without the reload fallback.
-    }
-  }
-
-  function clearPendingVerification() {
-    try {
-      sessionStorage.removeItem(VERIFY_KEY);
-    } catch {
-      // Ignore unavailable session storage.
-    }
-  }
-
-  function lockForManualReview(pending) {
-    busy = true;
-    updateInjectedButtons();
-    const text = strings(pending?.language);
-    showToast(text.uncertain, "error", 0, {
-      label: text.allowRetry,
-      onClick: () => {
-        clearPendingVerification();
-        busy = false;
-        updateInjectedButtons();
-        clearToast();
-      }
-    });
-  }
-
-  async function resumePendingVerification() {
-    let pending = null;
-    try {
-      pending = JSON.parse(sessionStorage.getItem(VERIFY_KEY) || "null");
-    } catch {
-      clearPendingVerification();
-      busy = false;
-      updateInjectedButtons();
-      return;
-    }
-
-    if (!pending) {
-      busy = false;
-      updateInjectedButtons();
-      return;
-    }
-    busy = true;
-    updateInjectedButtons();
-    if (Date.now() - Number(pending.createdAt || 0) > 300000) {
-      lockForManualReview(pending);
-      return;
-    }
-    if (!location.pathname.includes(`/status/${pending.sourceStatusId}`)) {
-      const sourceUrl = `https://x.com/${pending.sourceUsername}/status/${pending.sourceStatusId}`;
-      window.location.assign(sourceUrl);
-      return;
-    }
-
-    const text = strings(pending.language);
-    showToast(text.checking, "pending", 15000);
-    const previousIds = new Set(Array.isArray(pending.previousIds) ? pending.previousIds : []);
-    const publishedReply = await waitFor(
-      () => findNewPublishedReply(pending.command, previousIds, pending.author || "", pending.createdAt),
-      { timeout: 12000, interval: 250 }
-    );
-    clearToast();
-    if (publishedReply) {
-      clearPendingVerification();
-      busy = false;
-      updateInjectedButtons();
-      showToast(text.posted, "success", 4000);
-      scan(publishedReply);
-    } else {
-      lockForManualReview(pending);
-    }
-  }
-
   function openTipModal({ article, identity, button, initialAmount = null }) {
     if (busy) return;
     closeModal();
@@ -620,8 +477,6 @@
       await storageSet({ lastAmount: amount });
 
       let targetComposer = null;
-      let submitClicked = false;
-      let keepLocked = false;
       try {
         const sourceArticle = document.contains(article) ? article : findArticleByStatusId(identity.statusId);
         const replyButton = sourceArticle?.querySelector(SELECTORS.reply);
@@ -630,7 +485,7 @@
         const previouslyVisible = new Set(visibleComposers());
         const previouslyActive = document.activeElement;
         host.style.display = "none";
-        showToast(text.posting, "pending", 0);
+        showToast(text.preparing, "pending", 0);
         replyButton.click();
         targetComposer = await waitFor(
           () => findTargetComposer(previouslyVisible, identity.username, sourceArticle, previouslyActive),
@@ -654,61 +509,12 @@
         );
         if (!textReady) throw new Error(text.textNotReady);
 
-        const submit = await waitFor(() => {
-          const candidate = findSubmitForComposer(targetComposer);
-          return candidate?.getAttribute("aria-disabled") !== "true" && !candidate?.disabled ? candidate : null;
-        }, { timeout: 5000 });
-        if (!submit) throw new Error(text.submitDisabled);
-
-        const author = currentUsername();
-        const previousIds = matchingReplyIds(command, author);
-        const attemptStartedAt = Date.now();
-        savePendingVerification({
-          command,
-          author,
-          previousIds: [...previousIds],
-          sourceStatusId: identity.statusId,
-          sourceUsername: identity.username,
-          language,
-          createdAt: attemptStartedAt
-        });
-
-        status.textContent = text.posting;
-        submit.click();
-        submitClicked = true;
-
-        const publishedReply = await waitFor(
-          () => findNewPublishedReply(command, previousIds, author, attemptStartedAt),
-          { timeout: 15000, interval: 250 }
-        );
         targetComposer.removeAttribute("data-bch-tip-target");
         closeModal(host);
         clearToast();
-
-        if (publishedReply) {
-          clearPendingVerification();
-          showToast(text.posted, "success", 4000);
-          scan(publishedReply);
-        } else {
-          keepLocked = true;
-          showToast(text.checking, "pending", 1600);
-          const sourceUrl = `https://x.com/${identity.username}/status/${identity.statusId}`;
-          window.location.assign(sourceUrl);
-        }
+        showToast(text.ready, "success", 6000);
       } catch (error) {
         console.error("BCH Tip Button:", error);
-        if (submitClicked) {
-          keepLocked = true;
-          targetComposer?.removeAttribute("data-bch-tip-target");
-          closeModal(host);
-          clearToast();
-          showToast(text.checking, "pending", 0);
-          const sourceUrl = `https://x.com/${identity.username}/status/${identity.statusId}`;
-          window.location.assign(sourceUrl);
-          return;
-        }
-
-        clearPendingVerification();
         const targetHasText = Boolean(targetComposer && normalizeText(composerText(targetComposer)));
         if (targetHasText) {
           targetComposer.removeAttribute("data-bch-tip-target");
@@ -725,10 +531,8 @@
         amountInput.disabled = false;
         button.disabled = false;
       } finally {
-        if (!keepLocked) {
-          busy = false;
-          updateInjectedButtons();
-        }
+        busy = false;
+        updateInjectedButtons();
       }
     });
 
@@ -748,13 +552,7 @@
   });
 
   loadSettings().finally(() => {
-    try {
-      if (sessionStorage.getItem(VERIFY_KEY)) busy = true;
-    } catch {
-      // Ignore unavailable session storage.
-    }
     scan();
     observer.observe(document.documentElement, { childList: true, subtree: true });
-    resumePendingVerification();
   });
 })();
