@@ -5,10 +5,11 @@
   if (!Core) return;
 
   const SELECTORS = {
-    tweet: 'article[data-testid="tweet"]',
+    tweet: "article",
     reply: '[data-testid="reply"]',
-    actionGroup: 'div[role="group"]',
-    composer: '[data-testid^="tweetTextarea_"][contenteditable="true"]'
+    replyLink: 'a[href^="/compose/post?in_reply_to="]',
+    actionGroup: '[role="group"]',
+    composer: '[data-testid^="tweetTextarea_"][contenteditable="true"], [role="dialog"] textarea[aria-multiline="true"]'
   };
 
   const COPY = {
@@ -123,30 +124,31 @@
     return null;
   }
 
-  function findTweetIdentity(article) {
-    const links = [...article.querySelectorAll('a[href*="/status/"]')];
-    for (const link of links) {
-      const parsed = Core.parseStatusPath(link.getAttribute("href") || link.href);
-      if (parsed) return parsed;
-    }
-    return null;
+  function findReplyControl(article) {
+    return [...article.querySelectorAll(`${SELECTORS.reply}, ${SELECTORS.replyLink}`)].find((control) =>
+      control.closest(SELECTORS.tweet) === article && control.closest(SELECTORS.actionGroup)
+    ) || null;
+  }
+
+  function replyStatusId(url) {
+    return url.origin === location.origin && url.pathname === "/compose/post"
+      ? url.searchParams.get("in_reply_to")
+      : null;
+  }
+
+  function findTweetIdentity(article, reply = findReplyControl(article)) {
+    const targetId = reply?.matches(SELECTORS.replyLink) ? replyStatusId(new URL(reply.href)) : null;
+    if (!targetId && !article.matches('[data-testid="tweet"]')) return null;
+
+    return [...article.querySelectorAll('a[href*="/status/"]')]
+      .filter((link) => link.closest(SELECTORS.tweet) === article)
+      .map((link) => Core.parseStatusPath(link.getAttribute("href")))
+      .find((identity) => identity && (!targetId || identity.statusId === targetId)) || null;
   }
 
   function findArticleByStatusId(statusId) {
     return [...document.querySelectorAll(SELECTORS.tweet)].find((article) =>
       findTweetIdentity(article)?.statusId === statusId
-    ) || null;
-  }
-
-  function findActionGroup(article) {
-    const reply = article.querySelector(SELECTORS.reply);
-    if (reply) {
-      const group = reply.closest(SELECTORS.actionGroup);
-      if (group) return group;
-    }
-
-    return [...article.querySelectorAll(SELECTORS.actionGroup)].find((group) =>
-      group.querySelector('[data-testid="retweet"], [data-testid="unretweet"], [data-testid="like"], [data-testid="unlike"]')
     ) || null;
   }
 
@@ -161,22 +163,27 @@
     return [...document.querySelectorAll(SELECTORS.composer)].filter(visible);
   }
 
-  function findTargetComposer(previouslyVisible, username, sourceArticle, previouslyActive) {
-    const targetHandle = `@${String(username).replace(/^@+/, "")}`.toLowerCase();
+  function findTargetComposer(previouslyVisible, identity, sourceArticle, previouslyActive) {
+    const targetHandle = `@${identity.username}`.toLowerCase();
     const candidates = visibleComposers();
     const associated = (composer) => {
       const dialog = composer.closest('[role="dialog"]');
+      if (composer instanceof HTMLTextAreaElement) {
+        return Boolean(dialog && replyStatusId(new URL(location.href)) === identity.statusId);
+      }
       if (dialog && (dialog.textContent || "").toLowerCase().includes(targetHandle)) return true;
       return Boolean(sourceArticle && composer.closest(SELECTORS.tweet) === sourceArticle);
     };
     const focused = document.activeElement;
-    if (candidates.includes(focused) && focused !== previouslyActive) {
+    if (candidates.includes(focused) && focused !== previouslyActive
+        && (!(focused instanceof HTMLTextAreaElement) || associated(focused))) {
       return focused;
     }
     return candidates.find((composer) => !previouslyVisible.has(composer) && associated(composer)) || null;
   }
 
   function composerText(composer) {
+    if (composer instanceof HTMLTextAreaElement) return composer.value;
     return composer?.innerText || composer?.textContent || "";
   }
 
@@ -239,15 +246,19 @@
   }
 
   function injectButton(article) {
-    if (article.querySelector(":scope .bch-tip-action-slot")) return;
-
-    const identity = findTweetIdentity(article);
-    const actionGroup = findActionGroup(article);
+    const reply = findReplyControl(article);
+    const identity = findTweetIdentity(article, reply);
+    const actionGroup = reply?.closest(SELECTORS.actionGroup);
     if (!identity || !actionGroup) return;
+
+    const existingSlot = actionGroup.querySelector(":scope > .bch-tip-action-slot");
+    if (existingSlot?.dataset.statusId === identity.statusId) return;
+    existingSlot?.remove();
 
     const text = strings();
     const slot = document.createElement("div");
     slot.className = "bch-tip-action-slot";
+    slot.dataset.statusId = identity.statusId;
 
     const button = document.createElement("button");
     button.type = "button";
@@ -478,8 +489,10 @@
 
       let targetComposer = null;
       try {
-        const sourceArticle = document.contains(article) ? article : findArticleByStatusId(identity.statusId);
-        const replyButton = sourceArticle?.querySelector(SELECTORS.reply);
+        const sourceArticle = document.contains(article) && findTweetIdentity(article)?.statusId === identity.statusId
+          ? article
+          : findArticleByStatusId(identity.statusId);
+        const replyButton = sourceArticle && findReplyControl(sourceArticle);
         if (!replyButton) throw new Error(text.missingReply);
 
         const previouslyVisible = new Set(visibleComposers());
@@ -488,7 +501,7 @@
         showToast(text.preparing, "pending", 0);
         replyButton.click();
         targetComposer = await waitFor(
-          () => findTargetComposer(previouslyVisible, identity.username, sourceArticle, previouslyActive),
+          () => findTargetComposer(previouslyVisible, identity, sourceArticle, previouslyActive),
           { timeout: 7000 }
         );
         if (!targetComposer) throw new Error(text.missingComposer);

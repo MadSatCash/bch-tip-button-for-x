@@ -1,4 +1,4 @@
-# BCH Tip Button for X — 0.5.0
+# BCH Tip Button for X — 0.6.0
 
 Extensión local para Google Chrome que agrega un botón **Tip** a los posts de X. Al usarlo, detecta al autor, permite elegir un monto y prepara la respuesta:
 
@@ -8,7 +8,7 @@ Extensión local para Google Chrome que agrega un botón **Tip** a los posts de 
 View your BCH tip at tipbot.cash
 ```
 
-Abre y publica la respuesta dentro de la pestaña actual de X, sin ventanas adicionales. La interfaz incluye inglés y español; inglés es el idioma predeterminado.
+Prepara la respuesta en la pestaña actual de X. La interfaz incluye inglés y español y usa inglés de forma predeterminada.
 
 ## Instalación en Chrome
 
@@ -16,7 +16,7 @@ Abre y publica la respuesta dentro de la pestaña actual de X, sin ventanas adic
 2. Abrí `chrome://extensions`.
 3. Activá **Modo desarrollador** arriba a la derecha.
 4. Presioná **Cargar extensión sin empaquetar**.
-5. Elegí la carpeta `bch-tip-button-x/app`, que contiene `manifest.json`.
+5. Elegí la carpeta `bch-tip-button-x` que contiene `manifest.json`.
 6. Recargá la pestaña de X.
 
 ## Uso
@@ -24,7 +24,7 @@ Abre y publica la respuesta dentro de la pestaña actual de X, sin ventanas adic
 1. En un post de X, presioná el nuevo botón **Tip**.
 2. Elegí o escribí el monto en BCH.
 3. Revisá el comando.
-4. Presioná **Send tip** / **Enviar propina**.
+4. Presioná **Prepare reply** / **Preparar respuesta**.
 
 La extensión abre el compositor de X e inserta el comando, pero no publica por su cuenta. Podés revisar la respuesta, agregar texto propio y presionar **Responder** cuando estés conforme.
 

@@ -14,8 +14,10 @@ async function insertReplyInMainWorld(text, targetToken) {
     .replace(/[\u200B-\u200D\uFEFF]/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  const selector = '[data-testid^="tweetTextarea_"][contenteditable="true"]';
-  const editorText = (candidate) => candidate?.innerText || candidate?.textContent || "";
+  const selector = '[data-testid^="tweetTextarea_"][contenteditable="true"], [role="dialog"] textarea[aria-multiline="true"]';
+  const editorText = (candidate) => candidate instanceof HTMLTextAreaElement
+    ? candidate.value
+    : candidate?.innerText || candidate?.textContent || "";
   const editor = [...document.querySelectorAll(selector)].find((candidate) =>
     isVisible(candidate) && candidate.getAttribute("data-bch-tip-target") === targetToken
   ) || null;
@@ -27,16 +29,25 @@ async function insertReplyInMainWorld(text, targetToken) {
 
   editor.focus();
 
-  const clipboardData = new DataTransfer();
-  clipboardData.setData("text/plain", text);
-  const pasteEvent = new ClipboardEvent("paste", {
-    bubbles: true,
-    cancelable: true,
-    composed: true,
-    clipboardData
-  });
+  let handled = false;
+  if (editor instanceof HTMLTextAreaElement) {
+    const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
+    setValue.call(editor, text);
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    handled = true;
+  } else {
+    const clipboardData = new DataTransfer();
+    clipboardData.setData("text/plain", text);
+    const pasteEvent = new ClipboardEvent("paste", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      clipboardData
+    });
+    editor.dispatchEvent(pasteEvent);
+    handled = pasteEvent.defaultPrevented;
+  }
 
-  editor.dispatchEvent(pasteEvent);
   let actual = "";
   for (let attempt = 0; attempt < 15; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -46,7 +57,7 @@ async function insertReplyInMainWorld(text, targetToken) {
 
   return {
     ok: normalize(actual) === normalize(text),
-    handled: pasteEvent.defaultPrevented,
+    handled,
     actual
   };
 }
